@@ -5,3 +5,44 @@ Jiafei JS is a lightweight WebComponent based library which provides a set of fu
 to build a webpage using JS Vanilla 
 
 ## Main features
+ - Virtual DOM with diff algorithm to render only changes
+ - Reactive Components with state.
+ - Router class to handle urls in a SPA.
+ - Simple subscription system to events (bind, unbind, subscribe...)
+
+## Examples
+```js
+Component({
+  tagName: "my-button",
+  stylesURL: "my-button.css"
+},
+class Button extends WebComponent {
+  render() {
+    return `
+      <button>This is a button :D</button>
+    `
+  }
+})
+```
+
+```js
+Component({
+  tagName: "my-button",
+  stylesURL: "my-button.css"
+},
+class Button extends WebComponent {
+  init() {
+    this.status = {
+      count: 0,
+    }
+  }
+  bind() {
+    this.subscribe("button", "click", () => this.setState({ count: this.state.count + 1 }))
+  }
+  render() {
+    return `
+      <button>Total: ${this.status.count}</button>
+    `
+  }
+})
+```
