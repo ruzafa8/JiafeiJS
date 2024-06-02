@@ -45,7 +45,7 @@ class Router {
 
   _handleRoute(state = {}) {
     const { pathname } = window.location
-    const route = this._find(this._removeEndingSlash(pathname))
+    const route = this._find(Router._removeEndingSlash(pathname))
     if (route) {
       document.querySelector('#app')
         .innerHTML = `<${route.component}${this._stateToHTMLAttributes(state)}></${route.component}>`

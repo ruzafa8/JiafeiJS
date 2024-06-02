@@ -107,7 +107,6 @@ class WebComponent extends HTMLElement {
     this.init()
     if (this._useShadowDOM())
       this.attachShadow({ mode: 'open' })
-    console.log("WebComponent constructor")
     if (this._useShadowDOM()) {
       this.loadStylesOnce()
         .then(() => this._rerender())
