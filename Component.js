@@ -26,7 +26,6 @@ function Component(config, webComponent) {
 
   try {
     const nameToRegister = config.tagName || toKebabCase(webComponent.name)
-    console.log(`Component ${nameToRegister} registered`)
     customElements.define(nameToRegister, webComponent)
   } catch (err) {
     console.error(err)
