@@ -1,5 +1,6 @@
 import Router from './Router.js'
 import { stringToHTML, diff } from './diffing.js'
+import { toCSSStyleSheet } from './utils.js'
 
 const GLOBAL_CSS = [
   'bootstrap-5.3.3-dist/css/bootstrap.min.css',
@@ -246,11 +247,7 @@ class WebComponent extends HTMLElement {
     if (!css.promise) {
       css.promise = fetch(cssKey)
         .then(res => res.text())
-        .then(css => {
-          const stylesheet = new CSSStyleSheet()
-          stylesheet.replaceSync(css)
-          return stylesheet
-        })
+        .then(toCSSStyleSheet)
         .then(stylesheet => {
           css.loaded = true
           css.stylesheet = stylesheet

@@ -1,6 +1,4 @@
-function toKebabCase(str) {
-  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
-}
+import { toKebabCase } from "./utils"
 
 /**
  * Component function
