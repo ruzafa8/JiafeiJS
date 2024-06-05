@@ -1,6 +1,6 @@
 {
   "name": "@ruzafa8/jiafeijs",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Vanilla JS library for WebComponents",
   "main": "index.js",
   "scripts": {
