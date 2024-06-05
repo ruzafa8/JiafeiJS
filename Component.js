@@ -1,4 +1,4 @@
-import { toKebabCase } from "./utils"
+import { toArray, toKebabCase } from "./utils"
 
 /**
  * Component function
@@ -9,18 +9,22 @@ import { toKebabCase } from "./utils"
  * @description This function is used to create a new WebComponent
  * @example
  * Component({
- *  tagName: 'my-button',
- *  stylesURL: 'my-button'
+ *   tagName: 'my-button',
+ *   stylesURL: ['my-button']
+ *   styleCSS: `
+ *    .my-button {
+ *      background-color: red;
+ *    }`
  * },
  * class MyButton {
- * // Your code here
+ *   // Your code here
  * })
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 function Component(config, webComponent) {
-  if (config.stylesURL)
-    webComponent.customCSS = config.stylesURL
+  webComponent.customCSS = toArray(config.stylesURL)
+  webComponent.styleCSS = config.styleCSS || ''
 
   try {
     const nameToRegister = config.tagName || toKebabCase(webComponent.name)
