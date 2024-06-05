@@ -60,14 +60,14 @@ class WebComponent extends HTMLElement {
   router = Router.getInstance()
 
   /**
-   * The map to store the loaded CSS. It's used to avoid loading the same CSS multiple times.
+   * This map stores CSS loaded to avoid loading the same CSS multiple times.
    * @member {Map}
    * @private
    * @static
    * @const
    * @default
    * @memberof WebComponent
-   * @description This property is used to store the loaded CSS. It's used to avoid loading the same CSS multiple times.
+   * @description This map stores CSS loaded to avoid loading the same CSS multiple times.
    * @since 1.0.0
    * @version 1.0.0
    */
@@ -109,7 +109,7 @@ class WebComponent extends HTMLElement {
     if (this._useShadowDOM())
       this.attachShadow({ mode: 'open' })
     if (this._useShadowDOM()) {
-      this.loadStylesOnce()
+      this._loadStylesOnce()
         .then(() => this._rerender())
     } else {
       this._rerender()
@@ -237,15 +237,31 @@ class WebComponent extends HTMLElement {
     this.dispatchEvent(event)
   }
 
-  static getCSSOrLoad(cssKey) {
-    if (!WebComponent._loadedCSS.has(cssKey))
-      WebComponent._loadedCSS.set(cssKey, { loaded: false, promise: null, stylesheet: null })
-    const css = WebComponent._loadedCSS.get(cssKey)
+  /**
+   * This method returns a promise of the CSS stylesheet.
+   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
+   * If it is called again but it hasn't been resolved yet, it will return the same promise.
+   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
+   * @private
+   * @param {string} cssURI - URI of the CSS
+   * @returns {Promise<CSSStyleSheet>} - The CSS stylesheet
+   * @memberof WebComponent
+   * @description This method returns a promise of the CSS stylesheet.
+   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
+   * If it is called again but it hasn't been resolved yet, it will return the same promise.
+   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
+   * @since 1.0.0
+   * @version 1.0.0
+   */
+  static _getCSSOrLoad(cssURI) {
+    if (!WebComponent._loadedCSS.has(cssURI))
+      WebComponent._loadedCSS.set(cssURI, { loaded: false, promise: null, stylesheet: null })
+    const css = WebComponent._loadedCSS.get(cssURI)
     // css contains { loaded: bool, promise: Promise<CSSStyleSheet>, stylesheet: CSSStyleSheet }
     if (css.loaded)
       return Promise.resolve(css.stylesheet)
     if (!css.promise) {
-      css.promise = fetch(cssKey)
+      css.promise = fetch(cssURI)
         .then(res => res.text())
         .then(toCSSStyleSheet)
         .then(stylesheet => {
