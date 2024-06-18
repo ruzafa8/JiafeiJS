@@ -10,6 +10,9 @@ to build a webpage using JS Vanilla
  - Router class to handle urls in a SPA.
  - Simple subscription system to events (bind, unbind, subscribe...)
 
+## Including CSS
+We have different strategies to load CSS, you can check them [here](/docs/v1/css.md)
+
 ## Examples
 ```js
 Component({
