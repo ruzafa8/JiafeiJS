@@ -1,10 +1,6 @@
 import Router from './Router.js'
 import { stringToHTML, diff } from './diffing.js'
-
-const GLOBAL_CSS = [
-  'bootstrap-5.3.3-dist/css/bootstrap.min.css',
-  'styles.css',
-]
+import { toArray, toCSSStyleSheet } from './utils.js'
 
 /**
  * WebComponent class
@@ -59,18 +55,44 @@ class WebComponent extends HTMLElement {
   router = Router.getInstance()
 
   /**
-   * The map to store the loaded CSS. It's used to avoid loading the same CSS multiple times.
+   * This map stores CSS loaded to avoid loading the same CSS multiple times.
    * @member {Map}
    * @private
    * @static
    * @const
    * @default
    * @memberof WebComponent
-   * @description This property is used to store the loaded CSS. It's used to avoid loading the same CSS multiple times.
+   * @description This map stores CSS loaded to avoid loading the same CSS multiple times.
    * @since 1.0.0
    * @version 1.0.0
    */
   static _loadedCSS = new Map()
+
+  /**
+   * This variable stores CSS shared between all the components.
+   * @member {Array.<CSSStyleSheet>}
+   * @private
+   * @static
+   * @default
+   * @memberof WebComponent
+   * @description This property is used to store the global CSS shared between all the components.
+   * @since 1.1.0
+   * @version 1.1.0
+   */
+  static _globalCSS = []
+
+  /**
+   * This variable stores the CSS files shared between all the components.
+   * @member {Array.<string>}
+   * @private
+   * @static
+   * @default
+   * @memberof WebComponent
+   * @description This property is used to store the CSS files shared between all the components.
+   * @since 1.1.0
+   * @version 1.1.0
+   */
+  static _globalCSSFiles = []
 
   /**
    * When the rerender is called, the bound event are not removed automatically.
@@ -108,7 +130,7 @@ class WebComponent extends HTMLElement {
     if (this._useShadowDOM())
       this.attachShadow({ mode: 'open' })
     if (this._useShadowDOM()) {
-      this.loadStylesOnce()
+      this._loadStylesOnce()
         .then(() => this._rerender())
     } else {
       this._rerender()
@@ -236,21 +258,33 @@ class WebComponent extends HTMLElement {
     this.dispatchEvent(event)
   }
 
-  static getCSSOrLoad(cssKey) {
-    if (!WebComponent._loadedCSS.has(cssKey))
-      WebComponent._loadedCSS.set(cssKey, { loaded: false, promise: null, stylesheet: null })
-    const css = WebComponent._loadedCSS.get(cssKey)
+  /**
+   * This method returns a promise of the CSS stylesheet.
+   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
+   * If it is called again but it hasn't been resolved yet, it will return the same promise.
+   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
+   * @private
+   * @param {string} cssURI - URI of the CSS
+   * @returns {Promise<CSSStyleSheet>} - The CSS stylesheet
+   * @memberof WebComponent
+   * @description This method returns a promise of the CSS stylesheet.
+   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
+   * If it is called again but it hasn't been resolved yet, it will return the same promise.
+   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
+   * @since 1.0.0
+   * @version 1.0.0
+   */
+  static _getCSSOrLoad(cssURI) {
+    if (!WebComponent._loadedCSS.has(cssURI))
+      WebComponent._loadedCSS.set(cssURI, { loaded: false, promise: null, stylesheet: null })
+    const css = WebComponent._loadedCSS.get(cssURI)
     // css contains { loaded: bool, promise: Promise<CSSStyleSheet>, stylesheet: CSSStyleSheet }
     if (css.loaded)
       return Promise.resolve(css.stylesheet)
     if (!css.promise) {
-      css.promise = fetch(cssKey)
+      css.promise = fetch(cssURI)
         .then(res => res.text())
-        .then(css => {
-          const stylesheet = new CSSStyleSheet()
-          stylesheet.replaceSync(css)
-          return stylesheet
-        })
+        .then(toCSSStyleSheet)
         .then(stylesheet => {
           css.loaded = true
           css.stylesheet = stylesheet
@@ -260,15 +294,74 @@ class WebComponent extends HTMLElement {
     return css.promise
   }
 
-  async loadStylesOnce() {
+  /**
+   * Define the global CSS
+   * @static
+   * @param {string|Array.<string>} css - The CSS or an array of CSS
+   * @returns {void}
+   * @memberof WebComponent
+   * 
+   * @description This method is used to define the global CSS
+   * @example
+   * WebComponent.defineGlobalCSS(`
+   *   body {
+   *     background-color: red;
+   *   }
+   * `)
+   * import css from './my-button.css'
+   * WebComponent.defineGlobalCSS([
+   *  "body { background-color: red; }",
+   *   css
+   * ])
+   *
+   * @since 1.1.0
+   * @version 1.1.0
+   */
+  static defineGlobalCSS(css) {
+    WebComponent._globalCSS = toArray(css).map(toCSSStyleSheet)
+  }
+
+  /**
+   * Define the global CSS files
+   * @static
+   * @param {string|Array.<string>} cssFiles - The CSS files or an array of CSS files
+   * @returns {void}
+   * @memberof WebComponent
+   * 
+   * @description This method is used to define the global CSS files
+   * @example
+   * WebComponent.defineGlobalCSSFiles('my-button.css')
+   * @since 1.1.0
+   * @version 1.1.0
+   */
+  static defineGlobalCSSFiles(cssFiles) {
+    WebComponent._globalCSSFiles = toArray(cssFiles)
+  }
+
+  /**
+   * This method is used to load the class styles.
+   * It loads the global CSSs (files and styles) and also loads the styleCSS if it is defined.
+   * If any CSS is already loaded, it won't be loaded again.
+   * It returns a promise that resolves when all the CSSs are loaded.
+   * @private
+   * @returns {Promise<void>}
+   * @memberof WebComponent
+   * @description This method is used to load the class styles.
+   * It loads the global CSSs (files and styles) and also loads the styleCSS if it is defined.
+   * If any CSS is already loaded, it won't be loaded again.
+   * It returns a promise that resolves when all the CSSs are loaded.
+   * @since 1.0.0
+   * @version 1.1.0
+   */
+  async _loadStylesOnce() {
     return Promise.all([
-      ...GLOBAL_CSS.map(WebComponent.getCSSOrLoad),
-      this.constructor.customCSS ? WebComponent.getCSSOrLoad(this.constructor.customCSS) : Promise.resolve(null),
+      ...WebComponent._globalCSSFiles.map(WebComponent._getCSSOrLoad),
+      ...WebComponent._globalCSS,
+      ...this.constructor.customCSS.map(WebComponent._getCSSOrLoad),
+      this.constructor.styleCSS ? toCSSStyleSheet(this.constructor.styleCSS) : null,
     ])
       .then(css => css.filter(Boolean))
-      .then((css) => {
-        this._getDOM().adoptedStyleSheets = css
-      })
+      .then(css => this._getDOM().adoptedStyleSheets = css)
   }
 
   // async addBootstrap() {
