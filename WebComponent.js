@@ -150,7 +150,17 @@ class WebComponent extends HTMLElement {
   disconnectedCallback() {}
 
   /**
-   * @todo ...
+   * this method is automatically called when the component is connected to the DOM.
+   * We see if the attributes has changed to see if we need to rerender the component.
+   * @param {string} name - The name of the attribute
+   * @param {string} oldValue - The old value of the attribute
+   * @param {string} newValue - The new value of the attribute
+   * @returns {void}
+   * @memberof WebComponent
+   * @description This method is automatically called when the component is connected to the DOM.
+   * We see if the attributes has changed to see if we need to rerender the component.
+   * @since 1.0.0
+   * @version 1.0.0
    */
   attributeChangedCallback(name, oldValue, newValue) {
     if (!oldValue || oldValue === newValue) return
@@ -162,19 +172,72 @@ class WebComponent extends HTMLElement {
   /* Custom lifecycle methods */
 
   /**
-   * @todo ...
+   * This method is used to initialize the component.
+   * It is called automatically when the component is created.
+   * @returns {void}
+   * @memberof WebComponent
+   * @description This method is used to initialize the component.
+   * It is called automatically when the component is created.
+   * 
+   * @example
+   * init() {
+   *   this.state = {
+   *     name: 'Jiafei',
+   *     age: NaN,
+   *     weight: 0,
+   *   }
+   * }
+   * @since 1.0.0
+   * @version 1.0.0
    */
   init() {}
 
   /**
-   * @todo ...
+   * This method is used to render the component.
+   * It returns a string that represents the HTML of the component.
+   * @returns {string} - The HTML of the component
+   * @memberof WebComponent
+   * @description This method is used to render the component.
+   * It returns a string that represents the HTML of the component.
+   * 
+   * @example
+   * render() {
+   *   return `
+   *     <h1>Hello, ${this.state.name}</h1>
+   *     <p>Age: ${this.state.age}</p>
+   *     <p>Weight: ${this.state.weight}</p>
+   *   `
+   * }
+   * @since 1.0.0
+   * @version 1.0.0
    */
   render() {
     throw new Error('You have to implement the render method')
   }
 
   /**
-   * @todo ...
+   * This method is called when an attribute has changed.
+   * It is called automatically when an attribute has changed.
+   * If the old value is the same as the new value or is the first time the attribute is set,
+   * it won't be called.
+   * @param {string} name - The name of the attribute
+   * @param {string} oldValue - The old value of the attribute
+   * @param {string} newValue - The new value of the attribute
+   * @returns {void}
+   * @memberof WebComponent
+   * @description This method is called when an attribute has changed.
+   * It is called automatically when an attribute has changed.
+   * If the old value is the same as the new value or is the first time the attribute is set,
+   * it won't be called.
+   * 
+   * @example
+   * onChangeAttribute(name, oldValue, newValue) {
+   *   if (name === 'name') {
+   *     this.setState({ name: newValue })
+   *   }
+   * }
+   * @since 1.0.0
+   * @version 1.0.0
    */
   onChangeAttribute(name, oldValue, newValue) {}
 
@@ -210,6 +273,8 @@ class WebComponent extends HTMLElement {
   /* Custom methods */
 
   /**
+   * This method is used to subscribe to an event,
+   * which will be automatically unsubscribed when the component is rerendered or removed.
    * 
    * @param {string} query - The query selector
    * @param {string} event - The event name
@@ -217,7 +282,8 @@ class WebComponent extends HTMLElement {
    * @returns {void}
    * 
    * @memberof WebComponent
-   * @description This method is used to subscribe to an event
+   * @description This method is used to subscribe to an event,
+   * which will be automatically unsubscribed when the component is rerendered or removed.
    * @example
    * subscribe('button', 'click', () => console.log('Hello'))
    * @since 1.0.0
@@ -248,12 +314,25 @@ class WebComponent extends HTMLElement {
     this._rerender()
   }
 
+  /**
+   * Emit an event
+   * @param {string} name - The name of the event
+   * @param {any} detail - The detail of the event
+   * @returns {void}
+   * 
+   * @memberof WebComponent
+   * @description This method is used to emit an event
+   * @example
+   * emit('my-event', { name: 'John' })
+   * @since 1.0.0
+   * @version 1.0.0
+   */
   emit(name, detail) {
     const event = new CustomEvent(name, {
       detail,
-      bubbles: true,
-      cancelable: true,
-      composed: true
+      bubbles: true, // The event bubbles up through the DOM
+      cancelable: true, // The event is cancelable (it can be canceled with preventDefault())
+      composed: true // The event will cross the shadow DOM boundary
     })
     this.dispatchEvent(event)
   }
@@ -416,10 +495,28 @@ class WebComponent extends HTMLElement {
     this._unbind = this.bind()
   }
 
+  /**
+   * Get the DOM
+   * @private
+   * @returns {HTMLElement}
+   * @memberof WebComponent
+   * @description This method is used to get the DOM
+   * @version 1.0.0
+   * @since 1.0.0
+   */
   _getDOM() {
     return this._useShadowDOM() ? this.shadowRoot : this
   }
 
+  /**
+   * Use the shadow DOM
+   * @private
+   * @returns {boolean}
+   * @memberof WebComponent
+   * @description This method is used to use the shadow DOM
+   * @version 1.0.0
+   * @since 1.0.0
+   */
   _useShadowDOM() {
     return true
   }
