@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: Router.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: Router.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>
+/**
+ * Router class that handles the routing of the application
+ * @class
+ * @since 1.0.0
+ * @version 1.0.0
+ */
+class Router {
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @memberof Router
+   * @static
+   * @private
+   */
+  static _singleton = null
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @memberof Router
+   * @readonly
+   */
+  get query() {
+    const { search } = window.location
+    return search
+      .slice(1)
+      .split('&amp;')
+      .reduce((acc, pair) => {
+        const [key, value] = pair.split('=')
+        acc[key] = value
+        return acc
+      }, {})
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @memberof Router
+   * @static
+   */
+  static initRouter(routes) {
+    Router.routes = routes
+    Router._singleton = new Router()
+    Router._singleton._handleRoute()
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @memberof Router
+   * @static
+   */
+  static getInstance() {
+    return this._singleton
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @memberof Router
+   */
+  back() {
+    window.history.back()
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @memberof Router
+   */
+  forward() {
+    window.history.forward()
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @memberof Router
+   * @param {String} path - The path to push
+   * @param {Object} state - The state object
+   * @returns {void}
+   * @description This function is used to push a new path to the history
+   * @example
+   * Router.push('/home', { title: 'Home' })
+   */
+  push(path, state = {}) {
+    window.history.pushState(state, '', path)
+    this._handleRoute(state)
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.1
+   * @memberof Router
+   * @private
+   * @param {Object} state - The state object
+   * @returns {void}
+   * @description This function is used to handle the route of the application
+   * 
+   */
+  _handleRoute(state = {}) {
+    const { pathname } = window.location
+    const route = this._find(Router._removeEndingSlash(pathname))
+    if (route) {
+      document.querySelector('#app')
+        .innerHTML = `&lt;${route.component}${this._stateToHTMLAttributes(state)}>&lt;/${route.component}>`
+    }
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @param {String} pathname - The pathname to find
+   * @returns {Object} The route object
+   * @memberof Router
+   * @private
+   */
+  _find(pathname) {
+    // If I have /x/:y/:z and I have /x/1/hola it should match it and set params to { y: 1, z: 'hola' }
+    return Router.routes.find(({ path }) => {
+      const match = this._match(pathname, path)
+      if (match)
+        this.params = { ...match }
+      return !!match
+    })
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @param {String} pathname - The pathname to find
+   * @param {String} regexPath - The regex path
+   * @returns {Object} The route object
+   * @memberof Router
+   * @private
+   * @description This function is used to match the pathname with the regex path
+   */
+  _match(pathname, regexPath) {
+    const regexParts = regexPath.split('/')
+    const pathnameParts = pathname.split('/')
+    if (regexParts.length !== pathnameParts.length)
+      return false
+
+    const params = {}
+    for (let i = 0; i &lt; regexParts.length; i++) {
+      if (regexParts[i].startsWith(':')) {
+        params[regexParts[i].slice(1)] = pathnameParts[i]
+      } else if (regexParts[i] !== pathnameParts[i]) {
+        return false
+      }
+    }
+    return params
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @param {Object} state - The state object
+   * @returns {String} The HTML attributes
+   * @memberof Router
+   * @private
+   * @description This function is used to convert the state object to HTML attributes
+   */
+  _stateToHTMLAttributes(state) {
+    return Object.entries(state).reduce((acc, [key, value]) => {
+      return `${acc} ${key}="${value}"`
+    }, '')
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @param {String} path - The path to remove the ending slash
+   * @returns {String} The path without the ending slash
+   * @memberof Router
+   * @private
+   * @description This function is used to remove the ending slash from the path
+   * @static
+   */
+  static _removeEndingSlash(path) {
+    if (Router._hasSlashEnding(path))
+      return path.slice(0, -1)
+    return path
+  }
+
+  /**
+   * Routes of the application
+   * @type {Array}
+   * @since 1.0.0
+   * @version 1.0.0
+   * @param {String} path - The path to check
+   * @returns {Boolean} If the path has a slash ending
+   * @memberof Router
+   * @private
+   * @description This function is used to check if the path has a slash ending
+   * @static
+   */
+  static _hasSlashEnding(path) {
+    return path.endsWith('/') &amp;&amp; path !== '/'
+  }
+}
+
+export default Router
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Router.html">Router</a></li><li><a href="WebComponent.html">WebComponent</a></li></ul><h3>Global</h3><ul><li><a href="global.html#Component">Component</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.3</a> on Mon Jul 01 2024 21:29:24 GMT+0200 (GMT+02:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
