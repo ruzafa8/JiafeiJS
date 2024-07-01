@@ -35,7 +35,7 @@ Component({
 },
 class Button extends WebComponent {
   init() {
-    this.status = {
+    this.state = {
       count: 0,
     }
   }
@@ -44,7 +44,7 @@ class Button extends WebComponent {
   }
   render() {
     return `
-      <button>Total: ${this.status.count}</button>
+      <button>Total: ${this.state.count}</button>
     `
   }
 })
