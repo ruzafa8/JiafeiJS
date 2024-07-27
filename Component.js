@@ -32,6 +32,7 @@ function Component(config, webComponent) {
   } catch (err) {
     console.error(err)
   }
+  return webComponent
 }
 
 // function Component(wc) {
