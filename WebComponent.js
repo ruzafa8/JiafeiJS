@@ -1,5 +1,5 @@
 import Router from './Router.js'
-import { stringToHTML, diff } from './diffing.js'
+import { stringToHTML, diff, evaluateAttributes } from './diffing.js'
 import { toArray, toCSSStyleSheet } from './utils.js'
 
 /**
@@ -137,20 +137,61 @@ class WebComponent extends HTMLElement {
     }
   }
 
-  /* Automatic lifecycle methods */
+  /* Inherited methods */
 
   /**
-   * @todo ...
+   * Function to get component's properties. 
+   * If the property is a binding property, it will return the value of the binding property parsed.
+   * @memberof WebComponent
+   * @instance
+   * @description Function to get component's properties. If the property is a binding property, it will return the value of the binding property parsed.
+   * @since 1.1.0
+   * @version 1.1.0
    */
-  connectedCallback() {}
+    getAttribute(name, defaultValue) {
+      const value = super.getAttribute(name, defaultValue)
+      if (super.hasAttribute(`[${name}]`)) {
+        try {
+          return JSON.parse(value)
+        } catch {
+          return value
+        }
+      }
+      return super.getAttribute(name, defaultValue)
+    }
+
+  /* Inherit lifecycle methods */
 
   /**
-   * @todo ...
+   * This method is automatically called when the component is connected to the DOM.
+   * @returns {void}
+   * @memberof WebComponent
+   * @description This method is automatically called when the component is connected to the DOM.
+   * @since 1.0.0
+   * @version 1.0.0
    */
-  disconnectedCallback() {}
+  connectedCallback() {
+    evaluateAttributes(this, this)
+  }
 
   /**
-   * this method is automatically called when the component is connected to the DOM.
+   * This method is automatically called when the component is disconnected from the DOM.
+   * We unsubscribe all the event listeners and remove the unbind function.
+   * @returns {void}
+   * @memberof WebComponent
+   * @description This method is automatically called when the component is disconnected from the DOM.
+   * We unsubscribe all the event listeners and remove the unbind function.
+   * @since 1.0.0
+   * @version 1.1.0
+   */
+  disconnectedCallback() {
+    this._unsubscribe()
+    if (this._unbind)
+      this._unbind()
+  }
+
+  /**
+   * This method is automatically called when the component is connected to the DOM.
    * We see if the attributes has changed to see if we need to rerender the component.
    * @param {string} name - The name of the attribute
    * @param {string} oldValue - The old value of the attribute
@@ -338,42 +379,6 @@ class WebComponent extends HTMLElement {
   }
 
   /**
-   * This method returns a promise of the CSS stylesheet.
-   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
-   * If it is called again but it hasn't been resolved yet, it will return the same promise.
-   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
-   * @private
-   * @param {string} cssURI - URI of the CSS
-   * @returns {Promise<CSSStyleSheet>} - The CSS stylesheet
-   * @memberof WebComponent
-   * @description This method returns a promise of the CSS stylesheet.
-   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
-   * If it is called again but it hasn't been resolved yet, it will return the same promise.
-   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
-   * @since 1.0.0
-   * @version 1.0.0
-   */
-  static _getCSSOrLoad(cssURI) {
-    if (!WebComponent._loadedCSS.has(cssURI))
-      WebComponent._loadedCSS.set(cssURI, { loaded: false, promise: null, stylesheet: null })
-    const css = WebComponent._loadedCSS.get(cssURI)
-    // css contains { loaded: bool, promise: Promise<CSSStyleSheet>, stylesheet: CSSStyleSheet }
-    if (css.loaded)
-      return Promise.resolve(css.stylesheet)
-    if (!css.promise) {
-      css.promise = fetch(cssURI)
-        .then(res => res.text())
-        .then(toCSSStyleSheet)
-        .then(stylesheet => {
-          css.loaded = true
-          css.stylesheet = stylesheet
-          return stylesheet
-        })
-    }
-    return css.promise
-  }
-
-  /**
    * Define the global CSS
    * @static
    * @param {string|Array.<string>} css - The CSS or an array of CSS
@@ -415,32 +420,6 @@ class WebComponent extends HTMLElement {
    */
   static defineGlobalCSSFiles(cssFiles) {
     WebComponent._globalCSSFiles = toArray(cssFiles)
-  }
-
-  /**
-   * This method is used to load the class styles.
-   * It loads the global CSSs (files and styles) and also loads the styleCSS if it is defined.
-   * If any CSS is already loaded, it won't be loaded again.
-   * It returns a promise that resolves when all the CSSs are loaded.
-   * @private
-   * @returns {Promise<void>}
-   * @memberof WebComponent
-   * @description This method is used to load the class styles.
-   * It loads the global CSSs (files and styles) and also loads the styleCSS if it is defined.
-   * If any CSS is already loaded, it won't be loaded again.
-   * It returns a promise that resolves when all the CSSs are loaded.
-   * @since 1.0.0
-   * @version 1.1.0
-   */
-  async _loadStylesOnce() {
-    return Promise.all([
-      ...WebComponent._globalCSSFiles.map(WebComponent._getCSSOrLoad),
-      ...WebComponent._globalCSS,
-      ...this.constructor.customCSS.map(WebComponent._getCSSOrLoad),
-      this.constructor.styleCSS ? toCSSStyleSheet(this.constructor.styleCSS) : null,
-    ])
-      .then(css => css.filter(Boolean))
-      .then(css => this._getDOM().adoptedStyleSheets = css)
   }
 
   // async addBootstrap() {
@@ -491,8 +470,71 @@ class WebComponent extends HTMLElement {
     if (this._unbind)
       this._unbind()
     const node = stringToHTML(this.render())
+    evaluateAttributes(node, this)
     diff(node, this._getDOM())
     this._unbind = this.bind()
+  }
+
+  /**
+   * This method returns a promise of the CSS stylesheet.
+   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
+   * If it is called again but it hasn't been resolved yet, it will return the same promise.
+   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
+   * @private
+   * @param {string} cssURI - URI of the CSS
+   * @returns {Promise<CSSStyleSheet>} - The CSS stylesheet
+   * @memberof WebComponent
+   * @description This method returns a promise of the CSS stylesheet.
+   * If it is not in the cache, it will fetch the CSS file and convert it to a CSS stylesheet.
+   * If it is called again but it hasn't been resolved yet, it will return the same promise.
+   * If it is in the cache, it will resolve the promise with the CSS stylesheet directly.
+   * @since 1.0.0
+   * @version 1.0.0
+   */
+    static _getCSSOrLoad(cssURI) {
+      if (!WebComponent._loadedCSS.has(cssURI))
+        WebComponent._loadedCSS.set(cssURI, { loaded: false, promise: null, stylesheet: null })
+      const css = WebComponent._loadedCSS.get(cssURI)
+      // css contains { loaded: bool, promise: Promise<CSSStyleSheet>, stylesheet: CSSStyleSheet }
+      if (css.loaded)
+        return Promise.resolve(css.stylesheet)
+      if (!css.promise) {
+        css.promise = fetch(cssURI)
+          .then(res => res.text())
+          .then(toCSSStyleSheet)
+          .then(stylesheet => {
+            css.loaded = true
+            css.stylesheet = stylesheet
+            return stylesheet
+          })
+      }
+      return css.promise
+    }
+
+  /**
+   * This method is used to load the class styles.
+   * It loads the global CSSs (files and styles) and also loads the styleCSS if it is defined.
+   * If any CSS is already loaded, it won't be loaded again.
+   * It returns a promise that resolves when all the CSSs are loaded.
+   * @private
+   * @returns {Promise<void>}
+   * @memberof WebComponent
+   * @description This method is used to load the class styles.
+   * It loads the global CSSs (files and styles) and also loads the styleCSS if it is defined.
+   * If any CSS is already loaded, it won't be loaded again.
+   * It returns a promise that resolves when all the CSSs are loaded.
+   * @since 1.0.0
+   * @version 1.1.0
+   */
+  async _loadStylesOnce() {
+    return Promise.all([
+      ...WebComponent._globalCSSFiles.map(WebComponent._getCSSOrLoad),
+      ...WebComponent._globalCSS,
+      ...this.constructor.customCSS.map(WebComponent._getCSSOrLoad),
+      this.constructor.styleCSS ? toCSSStyleSheet(this.constructor.styleCSS) : null,
+    ])
+      .then(css => css.filter(Boolean))
+      .then(css => this._getDOM().adoptedStyleSheets = css)
   }
 
   /**

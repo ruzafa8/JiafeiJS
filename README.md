@@ -9,6 +9,7 @@ to build a webpage using JS Vanilla
  - Reactive Components with state.
  - Router class to handle urls in a SPA.
  - Simple subscription system to events (bind, unbind, subscribe...)
+ - [Attribute bindings](/docs/v1/attributes.md).
 
 ## Including CSS
 We have different strategies to load CSS, you can check them [here](/docs/v1/css.md)
