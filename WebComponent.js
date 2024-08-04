@@ -170,7 +170,9 @@ class WebComponent extends HTMLElement {
    * @since 1.0.0
    * @version 1.0.0
    */
-  connectedCallback() {}
+  connectedCallback() {
+    evaluateAttributes(this, this)
+  }
 
   /**
    * This method is automatically called when the component is disconnected from the DOM.
