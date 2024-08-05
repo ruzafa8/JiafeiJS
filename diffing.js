@@ -107,13 +107,48 @@ function diff(template, elem) {
 
 }
 
+/**
+ * 
+ * @param {string} str 
+ * @returns 
+ */
 function stringToHTML(str) {
   const parser = new DOMParser();
 	const doc = parser.parseFromString(str, 'text/html')
 	return doc.body
 }
 
+/**
+ * 
+ * @param {Element} node 
+ * @param {*} context 
+ */
+function evaluateAttributes(node, context) {
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    // Iterate over node's attributes
+    for (let attr of node.attributes) {
+      if (attr.name.startsWith('[') && attr.name.endsWith(']')) {
+        const attributeName = attr.name.slice(1, -1);
+        const attributeValue = attr.value;
+
+        try {
+					const evaluatedValue = new Function('context', `with(context) { return ${attributeValue} }`)(context);
+					if (evaluatedValue !== undefined && evaluatedValue !== null)
+						node.setAttribute(attributeName, JSON.stringify(evaluatedValue));
+        } catch (e) {
+          console.error(`Error evaluando el atributo ${attr.name}:`, e);
+        }
+      }
+    }
+  }
+  // Evaluate recursively children nodes
+  for (let child of node.childNodes) {
+    evaluateAttributes(child, context);
+  }
+}
+
 export {
   diff,
-  stringToHTML
+  stringToHTML,
+	evaluateAttributes
 }

@@ -1,6 +1,4 @@
-function toKebabCase(str) {
-  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
-}
+import { toArray, toKebabCase } from "./utils"
 
 /**
  * Component function
@@ -11,18 +9,22 @@ function toKebabCase(str) {
  * @description This function is used to create a new WebComponent
  * @example
  * Component({
- *  tagName: 'my-button',
- *  stylesURL: 'my-button'
+ *   tagName: 'my-button',
+ *   stylesURL: ['my-button']
+ *   styleCSS: `
+ *    .my-button {
+ *      background-color: red;
+ *    }`
  * },
  * class MyButton {
- * // Your code here
+ *   // Your code here
  * })
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 function Component(config, webComponent) {
-  if (config.stylesURL)
-    webComponent.customCSS = config.stylesURL
+  webComponent.customCSS = toArray(config.stylesURL)
+  webComponent.styleCSS = config.styleCSS || ''
 
   try {
     const nameToRegister = config.tagName || toKebabCase(webComponent.name)
@@ -30,6 +32,7 @@ function Component(config, webComponent) {
   } catch (err) {
     console.error(err)
   }
+  return webComponent
 }
 
 // function Component(wc) {
